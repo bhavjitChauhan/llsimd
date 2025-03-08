@@ -5,9 +5,9 @@
 #include "llvm/Pass.h"
 
 struct psimd : public llvm::PassInfoMixin<psimd> {
-  llvm::PreservedAnalyses run(llvm::Function &F,
+  llvm::PreservedAnalyses run(llvm::Function &function,
                               llvm::FunctionAnalysisManager &);
-  bool runOnBasicBlock(llvm::BasicBlock &B);
+  bool run_on_basic_block(llvm::BasicBlock &basic_block);
 
   // Without isRequired returning true, this pass will be skipped for functions
   // decorated with the optnone LLVM attribute. Note that clang -O0 decorates
