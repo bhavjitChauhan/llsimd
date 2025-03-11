@@ -39,7 +39,7 @@ Recommended:
 
 > [!WARNING]
 > Debug builds need 10-15 GB of disk space. Confirm that just enabling assertion
-> checks or a `RelWithDebInfo` build don't cover your needs.
+> checks or a `RelWithDebInfo` build doesn't cover your needs.
 
 See the official
 [Getting Started with the LLVM System](https://llvm.org/docs/GettingStarted.html)
@@ -57,15 +57,18 @@ sudo cmake --install build
 
 ##### Debian/Ubuntu
 
-Alternatively, install the latest pre-built binaries:
+Install the official APT packages:
 
 ```bash
-bash -c "$(wget -O - https://apt.llvm.org/llvm.sh)"
+wget https://apt.llvm.org/llvm.sh
+chmod +x llvm.sh
+sudo ./llvm.sh 20
 ```
 
 ##### Other
 
-https://github.com/llvm/llvm-project/releases/latest
+Download the binaries from LLVM's
+[GitHub releases](https://github.com/llvm/llvm-project/tree/llvmorg-20.1.0).
 
 ### Test
 
