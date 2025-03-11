@@ -1,17 +1,12 @@
 #include <mmintrin.h>
-#include <stdio.h>
 #include <stdint.h>
+#include <stdio.h>
 
 int main() {
-    __m64 a = _mm_set_pi32(20, 10);
-    __m64 b = _mm_set_pi32(40, 30);
+  __v2si m1 = {INT16_MAX, INT16_MIN};
+  __v2si m2 = {1, -1};
+  __v2si result = _mm_add_pi32(m1, m2);
 
-    __m64 result = _mm_add_pi32(a, b);
-
-    int32_t *res = (int32_t *)&result;
-    printf("Result: %d, %d\n", res[0], res[1]);
-
-    _mm_empty();
-
-    return 0;
+  for (uint8_t i = 0; i < 2; ++i)
+    printf("%d\n", result[i]);
 }
