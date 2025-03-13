@@ -50,7 +50,7 @@ bool psimd::run_on_basic_block(BasicBlock &basic_block) {
       if (intrinsic_name.consume_front("psll.")) {
         /*
         ; %result = call <8 x i16> @llvm.x86.sse2.psll.w(<8 x i16> %m1, <8 x i16> %m2)
-        %shuffle = shufflevector <8 x i16> %m2, <8 x i16> undef, <8 x i32> <i32 0, i32 0, i32 0, i32 0, i32 0, i32 0, i32 0, i32 0>
+        %shuffle = shufflevector <8 x i16> %m2, <8 x i16> undef, <8 x i32> zeroinitializer
         %result = shl <8 x i16> %9, %shuffle
         */
 
@@ -70,7 +70,7 @@ bool psimd::run_on_basic_block(BasicBlock &basic_block) {
         ; %result = call <8 x i16> @llvm.x86.sse2.pslli.w(<8 x i16> %m, i32 %count)
         %trunc = trunc i32 %count to i16
         %insert = insertelement <8 x i16> undef, i16 %trunc, i32 0
-        %shuffle = shufflevector <8 x i16> %insert, <8 x i16> undef, <8 x i32> <i32 0, i32 0, i32 0, i32 0, i32 0, i32 0, i32 0, i32 0>
+        %shuffle = shufflevector <8 x i16> %insert, <8 x i16> undef, <8 x i32> zeroinitializer
         %result = shl <8 x i16> %m, %shuffle
         */
 
@@ -105,7 +105,7 @@ bool psimd::run_on_basic_block(BasicBlock &basic_block) {
       } else if (intrinsic_name.consume_front("psra.")) {
         /*
         ; %result = call <8 x i16> @llvm.x86.sse2.psra.w(<8 x i16> %m1, <8 x i16> %m2)
-        %shuffle = shufflevector <8 x i16> %m2, <8 x i16> undef, <8 x i32> <i32 0, i32 0, i32 0, i32 0, i32 0, i32 0, i32 0, i32 0>
+        %shuffle = shufflevector <8 x i16> %m2, <8 x i16> undef, <8 x i32> zeroinitializer
         %result = ashr <8 x i16> %m1, %shuffle
         */
 
@@ -125,7 +125,7 @@ bool psimd::run_on_basic_block(BasicBlock &basic_block) {
         ; %result = call <8 x i16> @llvm.x86.sse2.psrai.w(<8 x i16> %m1, i32 %count)
         %trunc = trunc i32 %count to i16
         %insert = insertelement <8 x i16> undef, i16 %trunc, i32 0
-        %shuffle = shufflevector <8 x i16> %insert, <8 x i16> undef, <8 x i32> <i32 0, i32 0, i32 0, i32 0, i32 0, i32 0, i32 0, i32 0>
+        %shuffle = shufflevector <8 x i16> %insert, <8 x i16> undef, <8 x i32> zeroinitializer
         %result = ashr <8 x i16> %m1, %shuffle
         */
 
@@ -151,6 +151,24 @@ bool psimd::run_on_basic_block(BasicBlock &basic_block) {
         Value *shuffle = builder.CreateShuffleVector(
             insert, undef, ConstantAggregateZero::get(m1->getType()));
         Value *result = builder.CreateAShr(m1, shuffle);
+
+        call_inst->replaceAllUsesWith(result);
+        to_remove.push_back(&instruction);
+      } else if (intrinsic_name.consume_front("psrl.")) {
+        /*
+        ; %result = call <8 x i16> @llvm.x86.sse2.psrl.w(<8 x i16> %m1, <8 x i16> %m2)
+        %shuffle = shufflevector <8 x i16> %m2, <8 x i16> undef, <8 x i32> zeroinitializer
+        %result = lshr <8 x i16> %m1, %shuffle
+        */
+
+        Value *m1 = call_inst->getArgOperand(0);
+        Value *m2 = call_inst->getArgOperand(1);
+
+        IRBuilder<> builder(&instruction);
+        Value *undef = UndefValue::get(m2->getType());
+        Value *shuffle = builder.CreateShuffleVector(
+            m2, undef, ConstantAggregateZero::get(m2->getType()));
+        Value *result = builder.CreateLShr(m1, shuffle);
 
         call_inst->replaceAllUsesWith(result);
         to_remove.push_back(&instruction);
