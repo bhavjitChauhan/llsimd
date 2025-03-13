@@ -79,6 +79,34 @@ bool psimd::run_on_basic_block(BasicBlock &basic_block) {
 
         call_inst->replaceAllUsesWith(result);
         to_remove.push_back(&instruction);
+      } else if (intrinsic_name == "pmulh.w") {
+        /*
+        ; %result = call <8 x i16> @llvm.x86.sse2.pmulh.w(<8 x i16> %m1, <8 x i16> %m2)
+        %sext1 = sext <8 x i16> %m1 to <8 x i32>
+        %sext2 = sext <8 x i16> %m2 to <8 x i32>
+        %mul = mul <8 x i32> %sext1, %sext2
+        %high = ashr <8 x i32> %mul, <i32 16, i32 16, i32 16, i32 16, i32 16, i32 16, i32 16, i32 16>
+        %result = trunc <8 x i32> %high to <8 x i16>
+        */
+
+        Value *m1 = call_inst->getArgOperand(0);
+        Value *m2 = call_inst->getArgOperand(1);
+
+        IRBuilder<> builder(&instruction);
+        Value *sext1 = builder.CreateSExt(
+            m1, VectorType::get(builder.getInt32Ty(), 8, false));
+        Value *sext2 = builder.CreateSExt(
+            m2, VectorType::get(builder.getInt32Ty(), 8, false));
+        Value *mul = builder.CreateMul(sext1, sext2);
+        Value *high = builder.CreateAShr(
+            mul, ConstantDataVector::get(
+                     builder.getContext(),
+                     ArrayRef<uint32_t>({16, 16, 16, 16, 16, 16, 16, 16})));
+        Value *result = builder.CreateTrunc(
+            high, VectorType::get(builder.getInt16Ty(), 8, false));
+
+        call_inst->replaceAllUsesWith(result);
+        to_remove.push_back(&instruction);
       } else if (intrinsic_name.consume_front("psll.")) {
         /*
         ; %result = call <8 x i16> @llvm.x86.sse2.psll.w(<8 x i16> %m1, <8 x i16> %m2)
