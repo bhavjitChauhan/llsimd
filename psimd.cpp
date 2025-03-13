@@ -120,6 +120,40 @@ bool psimd::run_on_basic_block(BasicBlock &basic_block) {
 
         call_inst->replaceAllUsesWith(result);
         to_remove.push_back(&instruction);
+      } else if (intrinsic_name.consume_front("psrai.")) {
+        /*
+        ; %result = call <8 x i16> @llvm.x86.sse2.psrai.w(<8 x i16> %m1, i32 %count)
+        %trunc = trunc i32 %count to i16
+        %insert = insertelement <8 x i16> undef, i16 %trunc, i32 0
+        %shuffle = shufflevector <8 x i16> %insert, <8 x i16> undef, <8 x i32> <i32 0, i32 0, i32 0, i32 0, i32 0, i32 0, i32 0, i32 0>
+        %result = ashr <8 x i16> %m1, %shuffle
+        */
+
+        Value *m1 = call_inst->getArgOperand(0);
+        Value *m2 = call_inst->getArgOperand(1);
+
+        IRBuilder<> builder(&instruction);
+        Value *convert = nullptr;
+        switch (m1->getType()->getScalarSizeInBits()) {
+        case 16:
+          convert = builder.CreateTrunc(m2, m1->getType()->getScalarType());
+          break;
+        case 32:
+          convert = m2;
+          break;
+        default:
+          llvm_unreachable("Unknown intrinsic");
+        }
+
+        Value *undef = UndefValue::get(m1->getType());
+        Value *insert =
+            builder.CreateInsertElement(undef, convert, builder.getInt32(0));
+        Value *shuffle = builder.CreateShuffleVector(
+            insert, undef, ConstantAggregateZero::get(m1->getType()));
+        Value *result = builder.CreateAShr(m1, shuffle);
+
+        call_inst->replaceAllUsesWith(result);
+        to_remove.push_back(&instruction);
       }
 
       ++sse_intrinsic_count;
