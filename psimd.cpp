@@ -102,6 +102,24 @@ bool psimd::run_on_basic_block(BasicBlock &basic_block) {
 
         call_inst->replaceAllUsesWith(result);
         to_remove.push_back(&instruction);
+      } else if (intrinsic_name.consume_front("psra.")) {
+        /*
+        ; %result = call <8 x i16> @llvm.x86.sse2.psra.w(<8 x i16> %m1, <8 x i16> %m2)
+        %shuffle = shufflevector <8 x i16> %m2, <8 x i16> undef, <8 x i32> <i32 0, i32 0, i32 0, i32 0, i32 0, i32 0, i32 0, i32 0>
+        %result = ashr <8 x i16> %m1, %shuffle
+        */
+
+        Value *m1 = call_inst->getArgOperand(0);
+        Value *m2 = call_inst->getArgOperand(1);
+
+        IRBuilder<> builder(&instruction);
+        Value *undef = UndefValue::get(m2->getType());
+        Value *shuffle = builder.CreateShuffleVector(
+            m2, undef, ConstantAggregateZero::get(m2->getType()));
+        Value *result = builder.CreateAShr(m1, shuffle);
+
+        call_inst->replaceAllUsesWith(result);
+        to_remove.push_back(&instruction);
       }
 
       ++sse_intrinsic_count;
