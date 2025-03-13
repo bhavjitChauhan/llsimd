@@ -73,9 +73,15 @@ Download the binaries from LLVM's
 ### Test
 
 ```bash
-clang -S -emit-llvm ../in.c -o in.ll
+# C/C++ -> IR
+clang -S -emit-llvm ../in.c
+# Run pass on IR
 opt -load-pass-plugin ./libpsimd.so -passes=psimd -S in.ll -stats -o out.ll
-llc out.ll -o out.s
+# Interpret IR
+lli out.ll
+# IR -> assembly
+llc out.ll
+# Assembly -> binary
 clang out.s -o out
 ```
 
