@@ -12,6 +12,7 @@ using namespace llvm;
 #define DEBUG_TYPE "psimd"
 
 STATISTIC(mmx_intrinsic_count, "MMX intrinsics");
+STATISTIC(sse_intrinsic_count, "SSE intrinsics");
 STATISTIC(simd_intrinsic_count, "Total SIMD intrinsics");
 
 bool psimd::run_on_basic_block(BasicBlock &basic_block) {
@@ -20,11 +21,11 @@ bool psimd::run_on_basic_block(BasicBlock &basic_block) {
   std::vector<Instruction *> to_remove;
 
   for (auto &instruction : basic_block) {
-    auto *call_base = dyn_cast<CallBase>(&instruction);
-    if (call_base == nullptr)
+    auto *call_inst = dyn_cast<CallInst>(&instruction);
+    if (call_inst == nullptr)
       continue;
 
-    Function *function = call_base->getCalledFunction();
+    Function *function = call_inst->getCalledFunction();
     if (function == nullptr)
       continue;
 
@@ -32,19 +33,41 @@ bool psimd::run_on_basic_block(BasicBlock &basic_block) {
     if (intrinsic_id == Intrinsic::not_intrinsic)
       continue;
 
-    StringRef instrinsic_name = Intrinsic::getBaseName(intrinsic_id);
+    StringRef intrinsic_name = Intrinsic::getName(intrinsic_id);
 
-    if (!instrinsic_name.consume_front("llvm.x86."))
+    if (!intrinsic_name.consume_front("llvm.x86."))
       continue;
 
     changed = true;
-    errs() << "Intrinsic : " << instrinsic_name << '\n';
+    errs() << "Intrinsic : " << intrinsic_name << '\n';
 
-    if (instrinsic_name.consume_front("mmx.")) {
-      if (instrinsic_name == "emms")
+    if (intrinsic_name.consume_front("mmx.")) {
+      if (intrinsic_name == "emms")
         to_remove.push_back(&instruction);
 
       ++mmx_intrinsic_count;
+    } else if (intrinsic_name.consume_front("sse2.")) {
+      if (intrinsic_name.consume_front("psll.")) {
+        /*
+        ; %result = call <8 x i16> @llvm.x86.sse2.psll.w(<8 x i16> %m1, <8 x i16> %m2)
+        %shuffle = shufflevector <8 x i16> %m2, <8 x i16> undef, <8 x i32> <i32 0, i32 0, i32 0, i32 0, i32 0, i32 0, i32 0, i32 0>
+        %result = shl <8 x i16> %9, %shuffle
+        */
+
+        Value *m1 = call_inst->getArgOperand(0);
+        Value *m2 = call_inst->getArgOperand(1);
+
+        IRBuilder<> builder(&instruction);
+        Value *undef = UndefValue::get(m2->getType());
+        Value *shuffle = builder.CreateShuffleVector(
+            m2, undef, ConstantAggregateZero::get(m2->getType()));
+        Value *result = builder.CreateShl(m1, shuffle);
+
+        call_inst->replaceAllUsesWith(result);
+        to_remove.push_back(&instruction);
+      }
+
+      ++sse_intrinsic_count;
     }
 
     ++simd_intrinsic_count;
