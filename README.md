@@ -72,21 +72,33 @@ Download the binaries from LLVM's
 
 ### Test
 
+#### Unit Tests
+
+Requirements:
+- Python 3
+- [lit](https://pypi.org/project/lit/)
+
+```bash
+cmake --build build --target check
+```
+
+#### Manual
+
 ```bash
 # C/C++ -> IR
 clang -S -emit-llvm ../in.c
 # Run pass on IR
 opt -load-pass-plugin ./libpsimd.so -passes=psimd -S in.ll -stats -o out.ll
 # Interpret IR
+lli in.ll
 lli out.ll
-# IR -> assembly
-llc out.ll
-# Assembly -> binary
-clang out.s -o out
 ```
 
 The output assembly can be compared to the original:
 
 ```bash
+# C/C++ -> assembly
 clang -S ../in.c -o in.s
+# IR -> assembly
+llc out.ll
 ```

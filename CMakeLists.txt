@@ -32,3 +32,5 @@ add_library(psimd SHARED psimd.cpp)
 # behaviour on Linux)
 target_link_libraries(psimd
   "$<$<PLATFORM_ID:Darwin>:-undefined dynamic_lookup>")
+
+add_custom_target(check COMMAND lit -v ${CMAKE_CURRENT_SOURCE_DIR}/tests DEPENDS psimd)
