@@ -2,7 +2,6 @@
 
 #include "llvm/IR/BasicBlock.h"
 #include "llvm/IR/PassManager.h"
-#include "llvm/Pass.h"
 
 struct psimd : public llvm::PassInfoMixin<psimd> {
   llvm::PreservedAnalyses run(llvm::Function &function,
