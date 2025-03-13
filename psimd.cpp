@@ -209,6 +209,57 @@ bool psimd::run_on_basic_block(BasicBlock &basic_block) {
 
         call_inst->replaceAllUsesWith(result);
         to_remove.push_back(&instruction);
+      } else if (intrinsic_name == "packuswb.128") {
+        /*
+        ; %result = call <16 x i8> @llvm.x86.sse2.packuswb.128(<8 x i16> %m1, <8 x i16> %m2)
+        %min1 = call <8 x i16> @llvm.smax.v8i16(<8 x i16> %m1, <8 x i16> zeroinitializer)
+        %max1 = call <8 x i16> @llvm.smin.v8i16(<8 x i16> %min1, <8 x i16> splat(i16 255))
+        %min2 = call <8 x i16> @llvm.smax.v8i16(<8 x i16> %m2, <8 x i16> zeroinitializer)
+        %max2 = call <8 x i16> @llvm.smin.v8i16(<8 x i16> %min2, <8 x i16> splat(i16 255))
+        %trunc1 = trunc <8 x i16> %max1 to <8 x i8>
+        %trunc2 = trunc <8 x i16> %max2 to <8 x i8>
+        %result = shufflevector <8 x i8> %trunc1, <8 x i8> %trunc2, <16 x i32> <i32 0, i32 1, i32 2, i32 3, i32 4, i32 5, i32 6, i32 7, i32 8, i32 9, i32 10, i32 11, i32 12, i32 13, i32 14, i32 15>
+        */
+
+        Value *m1 = call_inst->getArgOperand(0);
+        Value *m2 = call_inst->getArgOperand(1);
+
+        IRBuilder<> builder(&instruction);
+        Value *splat_max =
+            builder.CreateVectorSplat(8, builder.getInt16(UINT8_MAX));
+        Value *min1 = builder.CreateCall(
+            Intrinsic::getOrInsertDeclaration(
+                function->getParent(), Intrinsic::smax,
+                {VectorType::get(builder.getInt16Ty(), 8, false)}),
+            {m1, ConstantAggregateZero::get(m1->getType())});
+        Value *max1 = builder.CreateCall(
+            Intrinsic::getOrInsertDeclaration(
+                function->getParent(), Intrinsic::smin,
+                {VectorType::get(builder.getInt16Ty(), 8, false)}),
+            {min1, splat_max});
+        Value *min2 = builder.CreateCall(
+            Intrinsic::getOrInsertDeclaration(
+                function->getParent(), Intrinsic::smax,
+                {VectorType::get(builder.getInt16Ty(), 8, false)}),
+            {m2, ConstantAggregateZero::get(m2->getType())});
+        Value *max2 = builder.CreateCall(
+            Intrinsic::getOrInsertDeclaration(
+                function->getParent(), Intrinsic::smin,
+                {VectorType::get(builder.getInt16Ty(), 8, false)}),
+            {min2, splat_max});
+        Value *trunc1 = builder.CreateTrunc(
+            max1, VectorType::get(builder.getInt8Ty(), 8, false));
+        Value *trunc2 = builder.CreateTrunc(
+            max2, VectorType::get(builder.getInt8Ty(), 8, false));
+        Value *result = builder.CreateShuffleVector(
+            trunc1, trunc2,
+            ConstantDataVector::get(
+                builder.getContext(),
+                ArrayRef<u_int8_t>(
+                    {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15})));
+
+        call_inst->replaceAllUsesWith(result);
+        to_remove.push_back(&instruction);
       } else if (intrinsic_name.consume_front("psll.")) {
         /*
         ; %result = call <8 x i16> @llvm.x86.sse2.psll.w(<8 x i16> %m1, <8 x i16> %m2)
