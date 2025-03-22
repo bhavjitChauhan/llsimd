@@ -1,4 +1,4 @@
-#include "psimd.h"
+#include "llsimd.h"
 
 #include "llvm/ADT/Statistic.h"
 #include "llvm/Passes/PassBuilder.h"
@@ -6,13 +6,13 @@
 
 using namespace llvm;
 
-#define DEBUG_TYPE "psimd"
+#define DEBUG_TYPE "llsimd"
 
 STATISTIC(mmx_intrinsic_count, "MMX intrinsics");
 STATISTIC(sse_intrinsic_count, "SSE intrinsics");
 STATISTIC(simd_intrinsic_count, "Total SIMD intrinsics");
 
-bool psimd::run_on_basic_block(BasicBlock &basic_block) {
+bool llsimd::run_on_basic_block(BasicBlock &basic_block) {
   bool changed = false;
 
   std::vector<Instruction *> to_remove;
@@ -433,7 +433,7 @@ bool psimd::run_on_basic_block(BasicBlock &basic_block) {
   return changed;
 }
 
-PreservedAnalyses psimd::run(llvm::Function &function,
+PreservedAnalyses llsimd::run(llvm::Function &function,
                              llvm::FunctionAnalysisManager &) {
   bool changed = false;
 
@@ -446,13 +446,13 @@ PreservedAnalyses psimd::run(llvm::Function &function,
 
 extern "C" LLVM_ATTRIBUTE_WEAK ::llvm::PassPluginLibraryInfo
 llvmGetPassPluginInfo() {
-  return {LLVM_PLUGIN_API_VERSION, "psimd", LLVM_VERSION_STRING,
+  return {LLVM_PLUGIN_API_VERSION, "llsimd", LLVM_VERSION_STRING,
           [](PassBuilder &pass_builder) {
             pass_builder.registerPipelineParsingCallback(
                 [](StringRef name, FunctionPassManager &function_pass_manager,
                    ArrayRef<PassBuilder::PipelineElement>) {
-                  if (name == "psimd") {
-                    function_pass_manager.addPass(psimd());
+                  if (name == "llsimd") {
+                    function_pass_manager.addPass(llsimd());
                     return true;
                   }
                   return false;
