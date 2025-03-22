@@ -1,4 +1,4 @@
-# psimd (Working Name)
+# llsimd
 
 ## Usage
 
@@ -14,13 +14,13 @@ Recommended:
 ```bash
 cd build
 cmake ..
-cmake --build . --target psimd
+cmake --build . --target llsimd
 ```
 
 ### Run
 
 ```bash
-clang -fpass-plugin=./libpsimd.so ../in.c
+clang -fpass-plugin=./libllsimd.so ../in.c
 ```
 
 To see pass statistics, LLVM needs to be compiled with assertion checks enabled.
@@ -88,7 +88,7 @@ cmake --build build --target check
 # C/C++ -> IR
 clang -S -emit-llvm ../in.c
 # Run pass on IR
-opt -load-pass-plugin ./libpsimd.so -passes=psimd -S in.ll -stats -o out.ll
+opt -load-pass-plugin ./libllsimd.so -passes=llsimd -S in.ll -stats -o out.ll
 # Interpret IR
 lli in.ll
 lli out.ll

@@ -3,7 +3,7 @@
 #include "llvm/IR/BasicBlock.h"
 #include "llvm/IR/PassManager.h"
 
-struct psimd : public llvm::PassInfoMixin<psimd> {
+struct llsimd : public llvm::PassInfoMixin<llsimd> {
   llvm::PreservedAnalyses run(llvm::Function &function,
                               llvm::FunctionAnalysisManager &);
   static bool run_on_basic_block(llvm::BasicBlock &basic_block);
