@@ -60,19 +60,19 @@ bool llsimd::run_on_basic_block(BasicBlock &basic_block) {
 
         IRBuilder<> builder(&instruction);
         Value *sext1 = builder.CreateSExt(
-            m1, VectorType::get(builder.getInt32Ty(), 8, false));
+            m1, VectorType::get(builder.getInt32Ty(), 8, false), "sext1");
         Value *sext2 = builder.CreateSExt(
-            m2, VectorType::get(builder.getInt32Ty(), 8, false));
-        Value *mul = builder.CreateMul(sext1, sext2);
+            m2, VectorType::get(builder.getInt32Ty(), 8, false), "sext2");
+        Value *mul = builder.CreateMul(sext1, sext2, "mul");
         Value *even = builder.CreateShuffleVector(
             mul, UndefValue::get(mul->getType()),
             ConstantDataVector::get(builder.getContext(),
-                                    ArrayRef<uint8_t>({0, 2, 4, 6})));
+                                    ArrayRef<uint8_t>({0, 2, 4, 6})), "even");
         Value *odd = builder.CreateShuffleVector(
             mul, UndefValue::get(mul->getType()),
             ConstantDataVector::get(builder.getContext(),
-                                    ArrayRef<uint8_t>({1, 3, 5, 7})));
-        Value *result = builder.CreateAdd(even, odd);
+                                    ArrayRef<uint8_t>({1, 3, 5, 7})), "odd");
+        Value *result = builder.CreateAdd(even, odd, "result");
 
         call_inst->replaceAllUsesWith(result);
         to_remove.push_back(&instruction);
@@ -91,16 +91,16 @@ bool llsimd::run_on_basic_block(BasicBlock &basic_block) {
 
         IRBuilder<> builder(&instruction);
         Value *sext1 = builder.CreateSExt(
-            m1, VectorType::get(builder.getInt32Ty(), 8, false));
+            m1, VectorType::get(builder.getInt32Ty(), 8, false), "sext1");
         Value *sext2 = builder.CreateSExt(
-            m2, VectorType::get(builder.getInt32Ty(), 8, false));
-        Value *mul = builder.CreateMul(sext1, sext2);
+            m2, VectorType::get(builder.getInt32Ty(), 8, false), "sext2");
+        Value *mul = builder.CreateMul(sext1, sext2, "mul");
         Value *high = builder.CreateAShr(
             mul, ConstantDataVector::get(
                      builder.getContext(),
-                     ArrayRef<uint32_t>({16, 16, 16, 16, 16, 16, 16, 16})));
+                     ArrayRef<uint32_t>({16, 16, 16, 16, 16, 16, 16, 16})), "high");
         Value *result = builder.CreateTrunc(
-            high, VectorType::get(builder.getInt16Ty(), 8, false));
+            high, VectorType::get(builder.getInt16Ty(), 8, false), "result");
 
         call_inst->replaceAllUsesWith(result);
         to_remove.push_back(&instruction);
@@ -121,39 +121,39 @@ bool llsimd::run_on_basic_block(BasicBlock &basic_block) {
 
         IRBuilder<> builder(&instruction);
         Value *splat_min =
-            builder.CreateVectorSplat(8, builder.getInt16(INT8_MIN));
+            builder.CreateVectorSplat(8, builder.getInt16(INT8_MIN), "splat_min");
         Value *splat_max =
-            builder.CreateVectorSplat(8, builder.getInt16(INT8_MAX));
+            builder.CreateVectorSplat(8, builder.getInt16(INT8_MAX), "splat_max");
         Value *min1 = builder.CreateCall(
             Intrinsic::getOrInsertDeclaration(
                 function->getParent(), Intrinsic::smax,
                 {VectorType::get(builder.getInt16Ty(), 8, false)}),
-            {m1, splat_min});
+            {m1, splat_min}, "min1");
         Value *max1 = builder.CreateCall(
             Intrinsic::getOrInsertDeclaration(
                 function->getParent(), Intrinsic::smin,
                 {VectorType::get(builder.getInt16Ty(), 8, false)}),
-            {min1, splat_max});
+            {min1, splat_max}, "max1");
         Value *min2 = builder.CreateCall(
             Intrinsic::getOrInsertDeclaration(
                 function->getParent(), Intrinsic::smax,
                 {VectorType::get(builder.getInt16Ty(), 8, false)}),
-            {m2, splat_min});
+            {m2, splat_min}, "min2");
         Value *max2 = builder.CreateCall(
             Intrinsic::getOrInsertDeclaration(
                 function->getParent(), Intrinsic::smin,
                 {VectorType::get(builder.getInt16Ty(), 8, false)}),
-            {min2, splat_max});
+            {min2, splat_max}, "max2");
         Value *trunc1 = builder.CreateTrunc(
-            max1, VectorType::get(builder.getInt8Ty(), 8, false));
+            max1, VectorType::get(builder.getInt8Ty(), 8, false), "trunc1");
         Value *trunc2 = builder.CreateTrunc(
-            max2, VectorType::get(builder.getInt8Ty(), 8, false));
+            max2, VectorType::get(builder.getInt8Ty(), 8, false), "trunc2");
         Value *result = builder.CreateShuffleVector(
             trunc1, trunc2,
             ConstantDataVector::get(
                 builder.getContext(),
                 ArrayRef<u_int8_t>(
-                    {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15})));
+                    {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15})), "result");
 
         call_inst->replaceAllUsesWith(result);
         to_remove.push_back(&instruction);
@@ -174,38 +174,38 @@ bool llsimd::run_on_basic_block(BasicBlock &basic_block) {
 
         IRBuilder<> builder(&instruction);
         Value *splat_min =
-            builder.CreateVectorSplat(4, builder.getInt32(INT16_MIN));
+            builder.CreateVectorSplat(4, builder.getInt32(INT16_MIN), "splat_min");
         Value *splat_max =
-            builder.CreateVectorSplat(4, builder.getInt32(INT16_MAX));
+            builder.CreateVectorSplat(4, builder.getInt32(INT16_MAX), "splat_max");
         Value *min1 = builder.CreateCall(
             Intrinsic::getOrInsertDeclaration(
                 function->getParent(), Intrinsic::smax,
                 {VectorType::get(builder.getInt32Ty(), 4, false)}),
-            {m1, splat_min});
+            {m1, splat_min}, "min1");
         Value *max1 = builder.CreateCall(
             Intrinsic::getOrInsertDeclaration(
                 function->getParent(), Intrinsic::smin,
                 {VectorType::get(builder.getInt32Ty(), 4, false)}),
-            {min1, splat_max});
+            {min1, splat_max}, "max1");
         Value *min2 = builder.CreateCall(
             Intrinsic::getOrInsertDeclaration(
                 function->getParent(), Intrinsic::smax,
                 {VectorType::get(builder.getInt32Ty(), 4, false)}),
-            {m2, splat_min});
+            {m2, splat_min}, "min2");
         Value *max2 = builder.CreateCall(
             Intrinsic::getOrInsertDeclaration(
                 function->getParent(), Intrinsic::smin,
                 {VectorType::get(builder.getInt32Ty(), 4, false)}),
-            {min2, splat_max});
+            {min2, splat_max}, "max2");
         Value *trunc1 = builder.CreateTrunc(
-            max1, VectorType::get(builder.getInt16Ty(), 4, false));
+            max1, VectorType::get(builder.getInt16Ty(), 4, false), "trunc1");
         Value *trunc2 = builder.CreateTrunc(
-            max2, VectorType::get(builder.getInt16Ty(), 4, false));
+            max2, VectorType::get(builder.getInt16Ty(), 4, false), "trunc2");
         Value *result = builder.CreateShuffleVector(
             trunc1, trunc2,
             ConstantDataVector::get(
                 builder.getContext(),
-                ArrayRef<u_int8_t>({0, 1, 2, 3, 4, 5, 6, 7})));
+                ArrayRef<u_int8_t>({0, 1, 2, 3, 4, 5, 6, 7})), "result");
 
         call_inst->replaceAllUsesWith(result);
         to_remove.push_back(&instruction);
@@ -226,37 +226,37 @@ bool llsimd::run_on_basic_block(BasicBlock &basic_block) {
 
         IRBuilder<> builder(&instruction);
         Value *splat_max =
-            builder.CreateVectorSplat(8, builder.getInt16(UINT8_MAX));
+            builder.CreateVectorSplat(8, builder.getInt16(UINT8_MAX), "splat_max");
         Value *min1 = builder.CreateCall(
             Intrinsic::getOrInsertDeclaration(
                 function->getParent(), Intrinsic::smax,
                 {VectorType::get(builder.getInt16Ty(), 8, false)}),
-            {m1, ConstantAggregateZero::get(m1->getType())});
+            {m1, ConstantAggregateZero::get(m1->getType())}, "min1");
         Value *max1 = builder.CreateCall(
             Intrinsic::getOrInsertDeclaration(
                 function->getParent(), Intrinsic::smin,
                 {VectorType::get(builder.getInt16Ty(), 8, false)}),
-            {min1, splat_max});
+            {min1, splat_max}, "max1");
         Value *min2 = builder.CreateCall(
             Intrinsic::getOrInsertDeclaration(
                 function->getParent(), Intrinsic::smax,
                 {VectorType::get(builder.getInt16Ty(), 8, false)}),
-            {m2, ConstantAggregateZero::get(m2->getType())});
+            {m2, ConstantAggregateZero::get(m2->getType())}, "min2");
         Value *max2 = builder.CreateCall(
             Intrinsic::getOrInsertDeclaration(
                 function->getParent(), Intrinsic::smin,
                 {VectorType::get(builder.getInt16Ty(), 8, false)}),
-            {min2, splat_max});
+            {min2, splat_max}, "max2");
         Value *trunc1 = builder.CreateTrunc(
-            max1, VectorType::get(builder.getInt8Ty(), 8, false));
+            max1, VectorType::get(builder.getInt8Ty(), 8, false), "trunc1");
         Value *trunc2 = builder.CreateTrunc(
-            max2, VectorType::get(builder.getInt8Ty(), 8, false));
+            max2, VectorType::get(builder.getInt8Ty(), 8, false), "trunc2");
         Value *result = builder.CreateShuffleVector(
             trunc1, trunc2,
             ConstantDataVector::get(
                 builder.getContext(),
                 ArrayRef<u_int8_t>(
-                    {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15})));
+                    {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15})), "result");
 
         call_inst->replaceAllUsesWith(result);
         to_remove.push_back(&instruction);
@@ -273,8 +273,8 @@ bool llsimd::run_on_basic_block(BasicBlock &basic_block) {
         IRBuilder<> builder(&instruction);
         Value *undef = UndefValue::get(m2->getType());
         Value *shuffle = builder.CreateShuffleVector(
-            m2, undef, ConstantAggregateZero::get(m2->getType()));
-        Value *result = builder.CreateShl(m1, shuffle);
+            m2, undef, ConstantAggregateZero::get(m2->getType()), "shuffle");
+        Value *result = builder.CreateShl(m1, shuffle, "result");
 
         call_inst->replaceAllUsesWith(result);
         to_remove.push_back(&instruction);
@@ -294,23 +294,23 @@ bool llsimd::run_on_basic_block(BasicBlock &basic_block) {
         Value *convert = nullptr;
         switch (m->getType()->getScalarSizeInBits()) {
         case 16:
-          convert = builder.CreateTrunc(count, m->getType()->getScalarType());
+          convert = builder.CreateTrunc(count, m->getType()->getScalarType(), "convert");
           break;
         case 32:
           convert = count;
           break;
         case 64:
-          convert = builder.CreateZExt(count, m->getType()->getScalarType());
+          convert = builder.CreateZExt(count, m->getType()->getScalarType(), "convert");
           break;
         default:
           llvm_unreachable("Unknown intrinsic");
         }
         Value *undef = UndefValue::get(m->getType());
         Value *insert =
-            builder.CreateInsertElement(undef, convert, builder.getInt32(0));
+            builder.CreateInsertElement(undef, convert, builder.getInt32(0), "insert");
         Value *shuffle = builder.CreateShuffleVector(
-            insert, undef, ConstantAggregateZero::get(m->getType()));
-        Value *result = builder.CreateShl(m, shuffle);
+            insert, undef, ConstantAggregateZero::get(m->getType()), "shuffle");
+        Value *result = builder.CreateShl(m, shuffle, "result");
 
         call_inst->replaceAllUsesWith(result);
         to_remove.push_back(&instruction);
@@ -327,8 +327,8 @@ bool llsimd::run_on_basic_block(BasicBlock &basic_block) {
         IRBuilder<> builder(&instruction);
         Value *undef = UndefValue::get(m2->getType());
         Value *shuffle = builder.CreateShuffleVector(
-            m2, undef, ConstantAggregateZero::get(m2->getType()));
-        Value *result = builder.CreateAShr(m1, shuffle);
+            m2, undef, ConstantAggregateZero::get(m2->getType()), "shuffle");
+        Value *result = builder.CreateAShr(m1, shuffle, "result");
 
         call_inst->replaceAllUsesWith(result);
         to_remove.push_back(&instruction);
@@ -348,7 +348,7 @@ bool llsimd::run_on_basic_block(BasicBlock &basic_block) {
         Value *convert = nullptr;
         switch (m1->getType()->getScalarSizeInBits()) {
         case 16:
-          convert = builder.CreateTrunc(m2, m1->getType()->getScalarType());
+          convert = builder.CreateTrunc(m2, m1->getType()->getScalarType(), "convert");
           break;
         case 32:
           convert = m2;
@@ -358,10 +358,10 @@ bool llsimd::run_on_basic_block(BasicBlock &basic_block) {
         }
         Value *undef = UndefValue::get(m1->getType());
         Value *insert =
-            builder.CreateInsertElement(undef, convert, builder.getInt32(0));
+            builder.CreateInsertElement(undef, convert, builder.getInt32(0), "insert");
         Value *shuffle = builder.CreateShuffleVector(
-            insert, undef, ConstantAggregateZero::get(m1->getType()));
-        Value *result = builder.CreateAShr(m1, shuffle);
+            insert, undef, ConstantAggregateZero::get(m1->getType()), "shuffle");
+        Value *result = builder.CreateAShr(m1, shuffle, "result");
 
         call_inst->replaceAllUsesWith(result);
         to_remove.push_back(&instruction);
@@ -378,8 +378,8 @@ bool llsimd::run_on_basic_block(BasicBlock &basic_block) {
         IRBuilder<> builder(&instruction);
         Value *undef = UndefValue::get(m2->getType());
         Value *shuffle = builder.CreateShuffleVector(
-            m2, undef, ConstantAggregateZero::get(m2->getType()));
-        Value *result = builder.CreateLShr(m1, shuffle);
+            m2, undef, ConstantAggregateZero::get(m2->getType()), "shuffle");
+        Value *result = builder.CreateLShr(m1, shuffle, "result");
 
         call_inst->replaceAllUsesWith(result);
         to_remove.push_back(&instruction);
@@ -399,23 +399,23 @@ bool llsimd::run_on_basic_block(BasicBlock &basic_block) {
         Value *convert = nullptr;
         switch (m->getType()->getScalarSizeInBits()) {
         case 16:
-          convert = builder.CreateTrunc(count, m->getType()->getScalarType());
+          convert = builder.CreateTrunc(count, m->getType()->getScalarType(), "convert");
           break;
         case 32:
           convert = count;
           break;
         case 64:
-          convert = builder.CreateZExt(count, m->getType()->getScalarType());
+          convert = builder.CreateZExt(count, m->getType()->getScalarType(), "convert");
           break;
         default:
           llvm_unreachable("Unknown intrinsic");
         }
         Value *undef = UndefValue::get(m->getType());
         Value *insert =
-            builder.CreateInsertElement(undef, convert, builder.getInt32(0));
+            builder.CreateInsertElement(undef, convert, builder.getInt32(0), "insert");
         Value *shuffle = builder.CreateShuffleVector(
-            insert, undef, ConstantAggregateZero::get(m->getType()));
-        Value *result = builder.CreateLShr(m, shuffle);
+            insert, undef, ConstantAggregateZero::get(m->getType()), "shuffle");
+        Value *result = builder.CreateLShr(m, shuffle, "result");
 
         call_inst->replaceAllUsesWith(result);
         to_remove.push_back(&instruction);
