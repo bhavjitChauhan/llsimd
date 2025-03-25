@@ -1,29 +1,39 @@
 # llsimd
 
+Portable SIMD intrinsics through LLVM IR.
+
 ## Usage
 
-Requirements:
+### Requirements
+
 - LLVM/Clang 20
 - CMake 3.20+
+- an x86 cross-compilation toolchain
 
-Recommended:
-- Linux
+On Debian/Ubuntu, these requirements can be fulfilled with:
+
+```bash
+wget https://apt.llvm.org/llvm.sh
+chmod +x llvm.sh
+sudo ./llvm.sh 20
+sudo apt install cmake gcc-multilib-x86-64-linux-gnu
+```
 
 ### Build
 
 ```bash
-cd build
-cmake ..
-cmake --build . --target llsimd
+cmake -B build
+cmake --build build
 ```
 
 ### Run
 
-```bash
-clang -fpass-plugin=./libllsimd.so ../in.c
-```
+Execute the [llsimd.sh](llsimd.sh) script in the same directory as the built `libllsimd.so`:
 
-To see pass statistics, LLVM needs to be compiled with assertion checks enabled.
+```bash
+cd build
+../llsimd.sh ../in.c
+```
 
 ## Development
 
@@ -33,9 +43,7 @@ To see pass statistics, LLVM needs to be compiled with assertion checks enabled.
 
 Requirements:
 - Git
-
-Recommended:
-- Ninja
+- Ninja (optional)
 
 > [!WARNING]
 > Debug builds need 10-15 GB of disk space. Confirm that just enabling assertion
@@ -75,6 +83,8 @@ Download the binaries from LLVM's
 #### Unit Tests
 
 Requirements:
+
+- an x86 machine
 - Python 3
 - [lit](https://pypi.org/project/lit/)
 
@@ -93,6 +103,8 @@ opt -load-pass-plugin ./libllsimd.so -passes=llsimd -S in.ll -stats -o out.ll
 lli in.ll
 lli out.ll
 ```
+
+To see pass statistics, LLVM needs to be compiled with assertion checks enabled.
 
 The output assembly can be compared to the original:
 
