@@ -72,7 +72,7 @@ bool llsimd::run_on_basic_block(BasicBlock &basic_block) {
             mul, UndefValue::get(mul->getType()),
             ConstantDataVector::get(builder.getContext(),
                                     ArrayRef<uint8_t>({1, 3, 5, 7})), "odd");
-        Value *result = builder.CreateAdd(even, odd, "result");
+        Value *result = builder.CreateAdd(even, odd);
 
         call_inst->replaceAllUsesWith(result);
         to_remove.push_back(&instruction);
@@ -100,7 +100,7 @@ bool llsimd::run_on_basic_block(BasicBlock &basic_block) {
                      builder.getContext(),
                      ArrayRef<uint32_t>({16, 16, 16, 16, 16, 16, 16, 16})), "high");
         Value *result = builder.CreateTrunc(
-            high, VectorType::get(builder.getInt16Ty(), 8, false), "result");
+            high, VectorType::get(builder.getInt16Ty(), 8, false));
 
         call_inst->replaceAllUsesWith(result);
         to_remove.push_back(&instruction);
@@ -153,7 +153,7 @@ bool llsimd::run_on_basic_block(BasicBlock &basic_block) {
             ConstantDataVector::get(
                 builder.getContext(),
                 ArrayRef<u_int8_t>(
-                    {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15})), "result");
+                    {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15})));
 
         call_inst->replaceAllUsesWith(result);
         to_remove.push_back(&instruction);
@@ -205,7 +205,7 @@ bool llsimd::run_on_basic_block(BasicBlock &basic_block) {
             trunc1, trunc2,
             ConstantDataVector::get(
                 builder.getContext(),
-                ArrayRef<u_int8_t>({0, 1, 2, 3, 4, 5, 6, 7})), "result");
+                ArrayRef<u_int8_t>({0, 1, 2, 3, 4, 5, 6, 7})));
 
         call_inst->replaceAllUsesWith(result);
         to_remove.push_back(&instruction);
@@ -256,7 +256,7 @@ bool llsimd::run_on_basic_block(BasicBlock &basic_block) {
             ConstantDataVector::get(
                 builder.getContext(),
                 ArrayRef<u_int8_t>(
-                    {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15})), "result");
+                    {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15})));
 
         call_inst->replaceAllUsesWith(result);
         to_remove.push_back(&instruction);
@@ -274,7 +274,7 @@ bool llsimd::run_on_basic_block(BasicBlock &basic_block) {
         Value *undef = UndefValue::get(m2->getType());
         Value *shuffle = builder.CreateShuffleVector(
             m2, undef, ConstantAggregateZero::get(m2->getType()), "shuffle");
-        Value *result = builder.CreateShl(m1, shuffle, "result");
+        Value *result = builder.CreateShl(m1, shuffle);
 
         call_inst->replaceAllUsesWith(result);
         to_remove.push_back(&instruction);
@@ -310,7 +310,7 @@ bool llsimd::run_on_basic_block(BasicBlock &basic_block) {
             builder.CreateInsertElement(undef, convert, builder.getInt32(0), "insert");
         Value *shuffle = builder.CreateShuffleVector(
             insert, undef, ConstantAggregateZero::get(m->getType()), "shuffle");
-        Value *result = builder.CreateShl(m, shuffle, "result");
+        Value *result = builder.CreateShl(m, shuffle);
 
         call_inst->replaceAllUsesWith(result);
         to_remove.push_back(&instruction);
@@ -328,7 +328,7 @@ bool llsimd::run_on_basic_block(BasicBlock &basic_block) {
         Value *undef = UndefValue::get(m2->getType());
         Value *shuffle = builder.CreateShuffleVector(
             m2, undef, ConstantAggregateZero::get(m2->getType()), "shuffle");
-        Value *result = builder.CreateAShr(m1, shuffle, "result");
+        Value *result = builder.CreateAShr(m1, shuffle);
 
         call_inst->replaceAllUsesWith(result);
         to_remove.push_back(&instruction);
@@ -361,7 +361,7 @@ bool llsimd::run_on_basic_block(BasicBlock &basic_block) {
             builder.CreateInsertElement(undef, convert, builder.getInt32(0), "insert");
         Value *shuffle = builder.CreateShuffleVector(
             insert, undef, ConstantAggregateZero::get(m1->getType()), "shuffle");
-        Value *result = builder.CreateAShr(m1, shuffle, "result");
+        Value *result = builder.CreateAShr(m1, shuffle);
 
         call_inst->replaceAllUsesWith(result);
         to_remove.push_back(&instruction);
@@ -379,7 +379,7 @@ bool llsimd::run_on_basic_block(BasicBlock &basic_block) {
         Value *undef = UndefValue::get(m2->getType());
         Value *shuffle = builder.CreateShuffleVector(
             m2, undef, ConstantAggregateZero::get(m2->getType()), "shuffle");
-        Value *result = builder.CreateLShr(m1, shuffle, "result");
+        Value *result = builder.CreateLShr(m1, shuffle);
 
         call_inst->replaceAllUsesWith(result);
         to_remove.push_back(&instruction);
@@ -415,7 +415,7 @@ bool llsimd::run_on_basic_block(BasicBlock &basic_block) {
             builder.CreateInsertElement(undef, convert, builder.getInt32(0), "insert");
         Value *shuffle = builder.CreateShuffleVector(
             insert, undef, ConstantAggregateZero::get(m->getType()), "shuffle");
-        Value *result = builder.CreateLShr(m, shuffle, "result");
+        Value *result = builder.CreateLShr(m, shuffle);
 
         call_inst->replaceAllUsesWith(result);
         to_remove.push_back(&instruction);
