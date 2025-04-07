@@ -8,9 +8,9 @@ set(CMAKE_PREFIX_PATH "" CACHE PATH "LLVM installation directory")
 # find_package can locate it)
 list(APPEND CMAKE_PREFIX_PATH "${CMAKE_PREFIX_PATH}/lib/cmake/llvm/")
 
-find_package(LLVM CONFIG)
+find_package(LLVM REQUIRED CONFIG)
 if("${LLVM_VERSION_MAJOR}" VERSION_LESS 20)
-  message(FATAL_ERROR "Found LLVM ${LLVM_VERSION_MAJOR}, but need LLVM 19 or above")
+  message(FATAL_ERROR "Found LLVM ${LLVM_VERSION_MAJOR}, but need LLVM 20 or above")
 endif()
 
 message(STATUS "Found LLVM: ${LLVM_DIR} (found version \"${LLVM_PACKAGE_VERSION}\")")
