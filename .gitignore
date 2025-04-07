@@ -2,4 +2,4 @@
 /build/
 /tests/**/Output/
 /tests/.lit_test_times.txt
-/venv/
+/.venv/
