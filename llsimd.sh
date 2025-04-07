@@ -20,5 +20,4 @@ set -x
 
 clang --target=x86_64-unknown-linux-gnu -S -emit-llvm "$1" -o "$basename.ll"
 opt -load-pass-plugin "./$2" -passes=llsimd -S "$basename.ll" -o "$basename.out.ll"
-llvm-as "$basename.out.ll" -o "$basename.out.bc"
-clang "$basename.out.bc" -o "$basename" &>/dev/null
+clang "$basename.out.ll" -o "$basename" &>/dev/null
