@@ -2,6 +2,26 @@
 
 Portable SIMD intrinsics through LLVM IR.
 
+## Overview
+
+The llsimd project enables program written in SIMD intrinsics to be run on any
+CPU architecture. We do this by leveraging the target-independent nature of LLVM
+IR’s first-class support of vector operations. This allows preexisting projects
+to become more widely accessible and future-proof against the rise and decline
+of specific architectures over time.
+
+For more information, see [llsimd.pdf](llsimd.pdf).
+
+## Example
+
+```diff
+-%result = call <8 x i16> @llvm.x86.sse2.pslli.w(<8 x i16> %m, i32 %count)
++%trunc = trunc i32 %count to i16
++%insert = insertelement <8 x i16> undef, i16 %trunc, i32 0
++%shuffle = shufflevector <8 x i16> %insert, <8 x i16> undef, <8 x i32> zeroinitializer
++%result = shl <8 x i16> %m, %shuffle
+```
+
 ## Usage
 
 ### Requirements
